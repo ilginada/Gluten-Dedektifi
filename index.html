@@ -78,7 +78,7 @@
     let urunlerData = [];
     let ilaclarData = [];
 
-    // Sayfa açıldığında her iki dosyayı da ayrı ayrı yüklüyoruz
+    // Sayfa açıldığında urunler.csv ve ayse.csv dosyalarını yüklüyoruz
     window.onload = function() {
         // 1. Ürünler dosyasını yükle
         fetch('urunler.csv')
@@ -89,18 +89,18 @@
             })
             .catch(err => console.log("urunler.csv yüklenemedi"));
 
-        // 2. İlaçlar dosyasını yükle
-        fetch('ilaclar.csv')
+        // 2. İlaçlar dosyası (ayse.csv) yükle
+        fetch('ayse.csv')
             .then(res => res.text())
             .then(data => {
                 ilaclarData = data.split('\n').map(r => r.trim()).filter(r => r.length > 0);
                 checkLoaded();
             })
-            .catch(err => console.log("ilaclar.csv yüklenemedi"));
+            .catch(err => console.log("ayse.csv yüklenemedi"));
     };
 
     function checkLoaded() {
-        document.getElementById('result').innerText = `Veritabanları hazır! Toplam ${urunlerData.length} ürün ve ${ilaclarData.length} ilaç taranmayı bekliyor.`;
+        document.getElementById('result').innerText = `Veritabanları hazır! Toplam ${urunlerData.length} ürün ve ${ilaclarData.length} ilaç/kayıt taranmayı bekliyor.`;
     }
 
     function searchAll() {
