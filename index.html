@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çölyak Gıda ve İlaç Dedektifi</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 20px; background-color: #f4f4f9; }
+        h1 { color: #2c3e50; font-size: 24px; }
+        .box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: inline-block; width: 100%; max-width: 400px; box-sizing: border-box; }
+        input[type="text"] { width: 100%; padding: 12px; margin-top: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        button { width: 100%; padding: 12px; margin-top: 15px; background-color: #27ae60; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #219653; }
+        #sonuc { margin-top: 20px; font-weight: bold; font-size: 16px; white-space: pre-line; line-height: 1.5; text-align: left; background: #fff; padding: 15px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h1>🌾 Çölyak Dedektifi</h1>
+        <p style="color: #666; font-size: 14px;">Ürün veya etken madde adını girerek liste kontrolü yapın.</p>
+        
+        <input type="text" id="arananKelime" placeholder="Örn: Nişasta, Maltodekstrin...">
+        <button onclick="ara()">Sorgula</button>
+    </div>
+
+    <div id="sonuc" style="display:none;"></div>
+
+    <script>
+        async function ara() {
+            var aranan = document.getElementById('arananKelime').value.trim().toLowerCase();
+            var sonucDiv = document.getElementById('sonuc');
+
+            if (aranan === "") {
+                sonucDiv.style.display = "block";
+                sonucDiv.innerHTML = "⚠️ Lütfen aramak istediğiniz ürünü yazın!";
+                return;
+            }
+
+            sonucDiv.style.display = "block";
+            sonucDiv.innerHTML = "⏳ Veritabanı taranıyor...";
+
+            try {
+                // Sitenin yanındaki ayse.csv dosyasını otomatik okur
+                var response = await fetch('ayse.csv');
+                
+                if (!response.ok) {
+                    sonucDiv.innerHTML = "⚠️ 'ayse.csv' veritabanı dosyası sunucuda bulunamadı.";
+                    return;
+                }
+
+                var icerik = await response.text();
+                var satirlar = icerik.split('\n');
+                var bulundu = satirlar.some(satir => satir.trim().toLowerCase().includes(aranan));
+
+                if (bulundu) {
+                    sonucDiv.innerHTML = "🎉 <b>BULUNDU!</b><br><br>'" + aranan.toUpperCase() + "' listede mevcut.";
+                    sonucDiv.style.color = "green";
+                } else {
+                    sonucDiv.innerHTML = "❌ <b>BULUNAMADI.</b><br><br>'" + aranan.toUpperCase() + "' listede yer almıyor.";
+                    sonucDiv.style.color = "red";
+                }
+
+            } catch (e) {
+                sonucDiv.innerHTML = "⚠️ Veri okunurken bir hata oluştu: " + e.message;
+            }
+        }
+    </script>
+
+</body>
+</html>
