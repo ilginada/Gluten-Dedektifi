@@ -3,188 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Çölyak Gıda ve İlaç Arama</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        h2 {
-            text-align: center;
-            color: #2c3e50;
-        }
-        .search-box {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        input[type="text"] {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        button {
-            padding: 12px 20px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        #result {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 5px;
-            font-size: 16px;
-            max-height: 400px;
-            overflow-y: auto;
-            white-space: pre-line;
-        }
-        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .info { background-color: #e2e3e5; color: #383d41; }
-        .category-title { font-weight: bold; margin-top: 10px; display: block; color: #2c3e50; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
-    </style>
+    <title>Güvenli Gıda ve İlaç Arama Asistanı</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
 
-<div class="container">
-    <h2>Çölyak Güvenli Ürün & İlaç Sorgulama</h2>
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Ürün veya ilaç adı yazın..." onkeypress="handleKeyPress(event)">
-        <button onclick="searchAll()">Sorgula</button>
-    </div>
-    <div id="result" class="info">Veritabanları yükleniyor...</div>
-</div>
+    <header class="bg-slate-900 shadow-sm py-6 px-4 text-white">
+        <div class="max-w-2xl mx-auto text-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-emerald-400">Çölyak Gıda ve İlaç Rehberi</h1>
+            <p class="text-sm text-slate-300 mt-1">Güvenli ve tam kelime eşleşmeli arama asistanı</p>
+        </div>
+    </header>
 
-<script>
-    let urunlerData = [];
-    let ilaclarData = [];
+    <main class="max-w-2xl mx-auto w-full px-4 py-8 flex-grow">
+        
+        <div class="relative mb-6">
+            <input 
+                type="text" 
+                id="aramaInput" 
+                placeholder="Ürün veya ilaç adı yazın (Örn: Efes)..." 
+                class="w-full px-4 py-3 pl-12 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-base bg-white"
+                autofocus
+            >
+            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                🔍
+            </span>
+        </div>
 
-    // Sayfa açıldığında urunler.csv ve ayse.csv dosyalarını yüklüyoruz
-    window.onload = function() {
-        // 1. Ürünler dosyasını yükle
-        fetch('urunler.csv')
-            .then(res => res.text())
-            .then(data => {
-                urunlerData = data.split('\n').map(r => r.trim()).filter(r => r.length > 0);
-                checkLoaded();
-            })
-            .catch(err => console.log("urunler.csv yüklenemedi"));
+        <div id="durumMetni" class="text-center text-sm text-slate-500 mb-4">
+            Veriler yükleniyor...
+        </div>
 
-        // 2. İlaçlar dosyası (ayse.csv) yükle
-        fetch('ayse.csv')
-            .then(res => res.text())
-            .then(data => {
-                ilaclarData = data.split('\n').map(r => r.trim()).filter(r => r.length > 0);
-                checkLoaded();
-            })
-            .catch(err => console.log("ayse.csv yüklenemedi"));
-    };
+        <div id="sonucListesi" class="space-y-3"></div>
 
-    function checkLoaded() {
-        document.getElementById('result').innerText = `Veritabanları hazır! Toplam ${urunlerData.length} ürün ve ${ilaclarData.length} ilaç/kayıt taranmayı bekliyor.`;
-    }
+    </main>
 
-    function searchAll() {
-        const input = document.getElementById('searchInput').value.trim().toLowerCase();
-        const resultDiv = document.getElementById('result');
+    <footer class="text-center py-6 text-xs text-slate-400 border-t border-slate-200 mt-auto">
+        GitHub Pages - Canlı Sistem
+    </footer>
 
-        if (!input) {
-            resultDiv.className = "error";
-            resultDiv.innerText = "⚠️ Lütfen aranacak bir kelime girin.";
-            return;
+    <script>
+        let tumVeriler = [];
+
+        async function veriYukle() {
+            const durumEl = document.getElementById("durumMetni");
+            try {
+                // Tarayıcı önbelleğini engellemek için sonuna rastgele sayı ekliyoruz (?v=999)
+                const response = await fetch('ayse.csv?v=' + new Date().getTime());
+                if (!response.ok) throw new Error("CSV bulunamadı");
+                
+                const dataText = await response.text();
+                tumVeriler = dataText.split(/\r?\n/).filter(satir => satir.trim() !== "");
+                
+                durumEl.textContent = `${tumVeriler.length} kayıt yüklendi. Arama yapabilirsiniz.`;
+            } catch (error) {
+                console.error(error);
+                durumEl.textContent = "Veriler yüklenirken hata oluştu!";
+                durumEl.classList.add("text-rose-500");
+            }
         }
 
-        const matchUrunler = urunlerData.filter(row => row.toLowerCase().includes(input));
-        const matchIlaclar = ilaclarData.filter(row => row.toLowerCase().includes(input));
+        veriYukle();
 
-        let html = "";
+        const aramaInput = document.getElementById("aramaInput");
+        aramaInput.addEventListener("input", (e) => {
+            // Türkçe büyük/küçük harf sorununu çözmek için toLocaleLowerCase('tr-TR') kullanıyoruz
+            const aranan = e.target.value.trim().toLocaleLowerCase('tr-TR');
+            const sonucListesi = document.getElementById("sonucListesi");
+            sonucListesi.innerHTML = "";
 
-        if (matchUrunler.length > 0) {
-            html += `<span class="category-title">🍞 Gıda / Ürün Sonuçları (${matchUrunler.length}):</span>`;
-            html += matchUrunler.slice(0, 10).join('<br>') + "<br>";
-        }
+            if (aranan.length === 0) return;
 
-        if (matchIlaclar.length > 0) {
-            html += `<span class="category-title">💊 İlaç Sonuçları (${matchIlaclar.length}):</span>`;
-            html += matchIlaclar.slice(0, 10).join('<br>') + "<br>";
-        }
+            // KESİN ÇÖZÜM: Kelime kelime bölüp tam eşleşme arıyoruz
+            const eslesenler = tumVeriler.filter(item => {
+                const satirKucuk = item.toLocaleLowerCase('tr-TR');
+                // Satırı boşluklar ve noktalama işaretlerine göre kelimelere ayır
+                const kelimeler = satirKucuk.split(/[^a-zA-ZçÇğĞıİöÖşŞüÜ0-9]+/);
+                
+                // Aranan kelime, satırdaki kelimelerden BİRİYLE TAM OLANAK eşleşiyor mu?
+                return kelimeler.includes(aranan);
+            }).slice(0, 50);
 
-        if (html !== "") {
-            resultDiv.className = "success";
-            resultDiv.innerHTML = html;
-        } else {
-            resultDiv.className = "error";
-            resultDiv.innerText = `❌ "${input.toUpperCase()}" veritabanlarında bulunamadı.`;
-        }
-    }
+            if (eslesenler.length === 0) {
+                sonucListesi.innerHTML = `
+                    <div class="bg-white p-4 rounded-xl shadow-sm text-center text-slate-500 border border-slate-100">
+                        Aradığınız kriterlere uygun sonuç bulunamadı.
+                    </div>`;
+                return;
+            }
 
-    function handleKeyPress(event) {
-        if (event.key === 'Enter') {
-            searchAll();
-        }
-    }
-</script>
-
+            eslesenler.forEach(item => {
+                const itemDiv = document.createElement("div");
+                itemDiv.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between";
+                itemDiv.innerHTML = `
+                    <span class="font-medium text-slate-700">${item}</span>
+                    <span class="text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full font-semibold">Uygun / Güvenli</span>
+                `;
+                sonucListesi.appendChild(itemDiv);
+            });
+        });
+    </script>
 </body>
 </html>
-// Arama inputuna her yazı yazıldığında çalışacak fonksiyon
-const aramaInput = document.getElementById("aramaInput");
-aramaInput.addEventListener("input", (e) => {
-    const aranan = e.target.value.trim().toLowerCase();
-    const sonucListesi = document.getElementById("sonucListesi");
-    sonucListesi.innerHTML = "";
-
-    if (aranan.length === 0) {
-        return; 
-    }
-
-    // Doğru mantık: Satırı kelimelerine ayırıp aranan kelimeyle tam eşleşen var mı diye bakıyoruz.
-    // Bu sayede "efes" arandığında "nefes" kelimesi ASLA eşleşmez.
-    const eslesenler = tumVeriler.filter(item => {
-        const satirKucuk = item.toLowerCase();
-        // Satırı boşluklara ve noktalama işaretlerine göre kelimelere bölelim
-        const kelimeler = satirKucuk.split(/[\s,\-\(\)]+/);
-        
-        // Kelimelerden herhangi biri tam olarak aranan kelimeye eşit mi?
-        return kelimeler.includes(aranan);
-    }).slice(0, 50);
-
-    if (eslesenler.length === 0) {
-        sonucListesi.innerHTML = `
-            <div class="bg-white p-4 rounded-xl shadow-sm text-center text-slate-500 border border-slate-100">
-                Aradığınız kriterlere uygun sonuç bulunamadı.
-            </div>`;
-        return;
-    }
-
-    // Sonuçları ekrana basıyoruz
-    eslesenler.forEach(item => {
-        const itemDiv = document.createElement("div");
-        itemDiv.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:border-emerald-200 transition-all";
-        
-        itemDiv.innerHTML = `
-            <span class="font-medium text-slate-700">${item}</span>
-            <span class="text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full font-semibold">Uygun / Güvenli</span>
-        `;
-        sonucListesi.appendChild(itemDiv);
-    });
-});
