@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çölyak Gıda ve İlaç Arama</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #e2e3e5; color: #383d41; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Çölyak Güvenli Ürün & İlaç Sorgulama</h2>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Ürün veya ilaç adı yazın..." onkeypress="handleKeyPress(event)">
+        <button onclick="searchCSV()">Sorgula</button>
+    </div>
+    <div id="result" class="info">Veritabanı yükleniyor, lütfen bekleyin...</div>
+</div>
+
+<script>
+    let csvData = [];
+
+    // Sayfa açıldığı an ayse.csv dosyasını arka planda hafızaya çekiyoruz
+    window.onload = function() {
+        fetch('ayse.csv')
+            .then(response => {
+                if (!response.ok) throw new Error("CSV dosyası okunamadı");
+                return response.text();
+            })
+            .then(data => {
+                // Satırlara ayırıyoruz
+                csvData = data.split('\n').map(row => row.trim()).filter(row => row.length > 0);
+                document.getElementById('result').innerText = `Veritabanı başarıyla yüklendi! Toplam ${csvData.length} kayıt taranmaya hazır.`;
+                document.getElementById('result').className = "info";
+            })
+            .catch(error => {
+                document.getElementById('result').className = "error";
+                document.getElementById('result').innerText = "⚠️ 'ayse.csv' dosyası yüklenirken bir hata oluştu. Dosya adını kontrol edin.";
+            });
+    };
+
+    function searchCSV() {
+        const input = document.getElementById('searchInput').value.trim().toLowerCase();
+        const resultDiv = document.getElementById('result');
+
+        if (!input) {
+            resultDiv.className = "error";
+            resultDiv.innerText = "⚠️ Lütfen aranacak bir ürün veya ilaç adı girin.";
+            return;
+        }
+
+        if (csvData.length === 0) {
+            resultDiv.className = "error";
+            resultDiv.innerText = "⚠️ Veritabanı henüz yüklenmedi veya boş.";
+            return;
+        }
+
+        // CSV içinde eşleşen satırları bulma
+        const matches = csvData.filter(row => row.toLowerCase().includes(input));
+
+        if (matches.length > 0) {
+            resultDiv.className = "success";
+            resultDiv.innerHTML = `✅ <strong>${matches.length} sonuç bulundu:</strong><br>` + matches.slice(0, 10).join('<br>');
+            if (matches.length > 10) {
+                resultDiv.innerHTML += `<br><small>...ve ${matches.length - 10} sonuç daha (ilk 10 tanesi gösteriliyor)</small>`;
+            }
+        } else {
+            resultDiv.className = "error";
+            resultDiv.innerText = `❌ "${input.toUpperCase()}" veritabanında bulunamadı.`;
+        }
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            searchCSV();
+        }
+    }
+</script>
+
+</body>
+</html>
