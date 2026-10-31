@@ -69,76 +69,68 @@
     <h2>Çölyak Güvenli Ürün & İlaç Sorgulama</h2>
     <div class="search-box">
         <input type="text" id="searchInput" placeholder="Ürün veya ilaç adı yazın..." onkeypress="handleKeyPress(event)">
-        <button onclick="searchBothFiles()">Sorgula</button>
+        <button onclick="searchAll()">Sorgula</button>
     </div>
-    <div id="result" class="info">Veritabanları yükleniyor, lütfen bekleyin...</div>
+    <div id="result" class="info">Veritabanları yükleniyor...</div>
 </div>
 
 <script>
     let urunlerData = [];
     let ilaclarData = [];
 
-    // Sayfa açıldığında HEM urunler.csv HEM DE ilaclar.csv dosyalarını arka planda yüklüyoruz
-    window.onload = async function() {
-        try {
-            const [urunResponse, ilacResponse] = await Promise.all([
-                fetch('urunler.csv'),
-                fetch('ilaclar.csv')
-            ]);
+    // Sayfa açıldığında her iki dosyayı da ayrı ayrı yüklüyoruz
+    window.onload = function() {
+        // 1. Ürünler dosyasını yükle
+        fetch('urunler.csv')
+            .then(res => res.text())
+            .then(data => {
+                urunlerData = data.split('\n').map(r => r.trim()).filter(r => r.length > 0);
+                checkLoaded();
+            })
+            .catch(err => console.log("urunler.csv yüklenemedi"));
 
-            if (!urunResponse.ok || !ilacResponse.ok) {
-                throw new Error("Dosyalardan biri veya ikisi okunamadı.");
-            }
-
-            const urunText = await urunResponse.text();
-            const ilacText = await ilacResponse.text();
-
-            urunlerData = urunText.split('\n').map(row => row.trim()).filter(row => row.length > 0);
-            ilaclarData = ilacText.split('\n').map(row => row.trim()).filter(row => row.length > 0);
-
-            document.getElementById('result').className = "info";
-            document.getElementById('result').innerText = `Veritabanları hazır! Toplam ${urunlerData.length} ürün ve ${ilaclarData.length} ilaç kaydı taranmaya hazır.`;
-        } catch (error) {
-            document.getElementById('result').className = "error";
-            document.getElementById('result').innerText = "⚠️ 'urunler.csv' veya 'ilaclar.csv' dosyaları yüklenirken hata oluştu. Dosya adlarını kontrol edin.";
-        }
+        // 2. İlaçlar dosyasını yükle
+        fetch('ilaclar.csv')
+            .then(res => res.text())
+            .then(data => {
+                ilaclarData = data.split('\n').map(r => r.trim()).filter(r => r.length > 0);
+                checkLoaded();
+            })
+            .catch(err => console.log("ilaclar.csv yüklenemedi"));
     };
 
-    function searchBothFiles() {
+    function checkLoaded() {
+        document.getElementById('result').innerText = `Veritabanları hazır! Toplam ${urunlerData.length} ürün ve ${ilaclarData.length} ilaç taranmayı bekliyor.`;
+    }
+
+    function searchAll() {
         const input = document.getElementById('searchInput').value.trim().toLowerCase();
         const resultDiv = document.getElementById('result');
 
         if (!input) {
             resultDiv.className = "error";
-            resultDiv.innerText = "⚠️ Lütfen aranacak bir ürün veya ilaç adı girin.";
+            resultDiv.innerText = "⚠️ Lütfen aranacak bir kelime girin.";
             return;
         }
 
-        if (urunlerData.length === 0 && ilaclarData.length === 0) {
-            resultDiv.className = "error";
-            resultDiv.innerText = "⚠️ Veritabanları henüz yüklenmedi.";
-            return;
+        const matchUrunler = urunlerData.filter(row => row.toLowerCase().includes(input));
+        const matchIlaclar = ilaclarData.filter(row => row.toLowerCase().includes(input));
+
+        let html = "";
+
+        if (matchUrunler.length > 0) {
+            html += `<span class="category-title">🍞 Gıda / Ürün Sonuçları (${matchUrunler.length}):</span>`;
+            html += matchUrunler.slice(0, 10).join('<br>') + "<br>";
         }
 
-        // İki dosyada ayrı ayrı arama yapıyoruz
-        const matchingUrunler = urunlerData.filter(row => row.toLowerCase().includes(input));
-        const matchingIlaclar = ilaclarData.filter(row => row.toLowerCase().includes(input));
-
-        let outputHTML = "";
-
-        if (matchingUrunler.length > 0) {
-            outputHTML += `<span class="category-title">🍞 Gıda / Ürün Sonuçları (${matchingUrunler.length}):</span>`;
-            outputHTML += matchingUrunler.slice(0, 10).join('<br>') + "<br>";
+        if (matchIlaclar.length > 0) {
+            html += `<span class="category-title">💊 İlaç Sonuçları (${matchIlaclar.length}):</span>`;
+            html += matchIlaclar.slice(0, 10).join('<br>') + "<br>";
         }
 
-        if (matchingIlaclar.length > 0) {
-            outputHTML += `<span class="category-title">💊 İlaç Sonuçları (${matchingIlaclar.length}):</span>`;
-            outputHTML += matchingIlaclar.slice(0, 10).join('<br>') + "<br>";
-        }
-
-        if (outputHTML !== "") {
+        if (html !== "") {
             resultDiv.className = "success";
-            resultDiv.innerHTML = outputHTML;
+            resultDiv.innerHTML = html;
         } else {
             resultDiv.className = "error";
             resultDiv.innerText = `❌ "${input.toUpperCase()}" veritabanlarında bulunamadı.`;
@@ -147,7 +139,7 @@
 
     function handleKeyPress(event) {
         if (event.key === 'Enter') {
-            searchBothFiles();
+            searchAll();
         }
     }
 </script>
