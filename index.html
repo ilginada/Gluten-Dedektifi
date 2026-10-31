@@ -1,24 +1,12 @@
 <!DOCTYPE html>
 <html lang="tr">
-<head
-    <!DOCTYPE html>
-<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Google Doğrulama Kodunu buraya ekliyoruz -->
+    <!-- Google Doğrulama Kodu -->
     <meta name="google-site-verification" content="OArqvvslfpSel8d40VEN0Dgc5xB4xRpsqlqCcS1pX5k" />
 
-    <!-- Google ve Arama Motorları İçin SEO Etiketleri -->
-    <title>Çölyak Güvenli Gıda ve İlaç Arama Rehberi</title>
-    <meta name="description" content="Çölyak hastaları için güvenli gıda ve ilaç sorgulama rehberi...">
-    
-    <!-- (Geri kalan tüm kodlar aynı kalıyor, hiçbir şeyi silmiyorsun) -->
-    file:///C:/Users/ilgin/Downloads/google8710f83b1ed6f35e.html
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <!-- Google ve Arama Motorları İçin SEO Etiketleri -->
     <title>Çölyak Güvenli Gıda ve İlaç Arama Rehberi</title>
     <meta name="description" content="Çölyak hastaları için güvenli gıda ve ilaç sorgulama rehberi. Binlerce ürünü ve ilacı tek arama çubuğundan anında güvenle sorgulayın.">
@@ -77,10 +65,8 @@
         async function verileriYukle() {
             const durumEl = document.getElementById("durumMetni");
             try {
-                // Tarayıcı önbelleğine takılmasın diye zaman damgası ekliyoruz
                 const timestamp = new Date().getTime();
                 
-                // Hem ilaçları (ayse.csv) hem gıdaları (urunler.csv) yüklüyoruz
                 const [ilacResponse, gidaResponse] = await Promise.all([
                     fetch('ayse.csv?v=' + timestamp),
                     fetch('urunler.csv?v=' + timestamp).catch(() => null)
@@ -98,7 +84,6 @@
                     birlesikVeri = birlesikVeri.concat(gidaText.split(/\r?\n/));
                 }
 
-                // Performans için verileri önceden kelimelerine ayırıp hafızaya alıyoruz
                 tumVeriler = birlesikVeri
                     .filter(satir => satir.trim() !== "")
                     .map(satir => {
@@ -118,7 +103,6 @@
 
         verileriYukle();
 
-        // Arama Mekanizması
         const aramaInput = document.getElementById("aramaInput");
         aramaInput.addEventListener("input", (e) => {
             const aranan = e.target.value.trim().toLocaleLowerCase('tr-TR');
@@ -127,12 +111,11 @@
 
             if (aranan.length === 0) return;
 
-            // Hızlı tam kelime eşleşmesi (nefes / efes ayrımı)
             const eslesenler = [];
             for (let i = 0; i < tumVeriler.length; i++) {
                 if (tumVeriler[i].kelimeler.includes(aranan)) {
                     eslesenler.push(tumVeriler[i].orjinal);
-                    if (eslesenler.length >= 50) break; // Sayfa hızlı kalsın diye ilk 50 sonuç
+                    if (eslesenler.length >= 50) break;
                 }
             }
 
@@ -144,7 +127,6 @@
                 return;
             }
 
-            // Sonuçları ekrana basma
             let htmlIcerik = "";
             eslesenler.forEach(item => {
                 htmlIcerik += `
