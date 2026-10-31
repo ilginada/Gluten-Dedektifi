@@ -53,13 +53,14 @@
             padding: 15px;
             border-radius: 5px;
             font-size: 16px;
-            max-height: 350px;
+            max-height: 400px;
             overflow-y: auto;
             white-space: pre-line;
         }
         .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .info { background-color: #e2e3e5; color: #383d41; }
+        .category-title { font-weight: bold; margin-top: 10px; display: block; color: #2c3e50; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
     </style>
 </head>
 <body>
@@ -67,67 +68,86 @@
 <div class="container">
     <h2>Çölyak Güvenli Ürün & İlaç Sorgulama</h2>
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Ürün veya marka adı yazın..." onkeypress="handleKeyPress(event)">
-        <button onclick="searchCSV()">Sorgula</button>
+        <input type="text" id="searchInput" placeholder="Ürün veya ilaç adı yazın..." onkeypress="handleKeyPress(event)">
+        <button onclick="searchBothFiles()">Sorgula</button>
     </div>
-    <div id="result" class="info">Veritabanı yükleniyor, lütfen bekleyin...</div>
+    <div id="result" class="info">Veritabanları yükleniyor, lütfen bekleyin...</div>
 </div>
 
 <script>
-    let csvData = [];
+    let urunlerData = [];
+    let ilaclarData = [];
 
-    // Sayfa açıldığında urunler.csv dosyasını yüklüyoruz
-    window.onload = function() {
-        fetch('urunler.csv')
-            .then(response => {
-                if (!response.ok) throw new Error("CSV dosyası okunamadı");
-                return response.text();
-            })
-            .then(data => {
-                csvData = data.split('\n').map(row => row.trim()).filter(row => row.length > 0);
-                document.getElementById('result').innerText = `Veritabanı başarıyla yüklendi! Toplam ${csvData.length} kayıt taranmaya hazır.`;
-                document.getElementById('result').className = "info";
-            })
-            .catch(error => {
-                document.getElementById('result').className = "error";
-                document.getElementById('result').innerText = "⚠️ 'urunler.csv' dosyası yüklenirken bir hata oluştu. Dosya adını kontrol edin.";
-            });
+    // Sayfa açıldığında HEM urunler.csv HEM DE ilaclar.csv dosyalarını arka planda yüklüyoruz
+    window.onload = async function() {
+        try {
+            const [urunResponse, ilacResponse] = await Promise.all([
+                fetch('urunler.csv'),
+                fetch('ilaclar.csv')
+            ]);
+
+            if (!urunResponse.ok || !ilacResponse.ok) {
+                throw new Error("Dosyalardan biri veya ikisi okunamadı.");
+            }
+
+            const urunText = await urunResponse.text();
+            const ilacText = await ilacResponse.text();
+
+            urunlerData = urunText.split('\n').map(row => row.trim()).filter(row => row.length > 0);
+            ilaclarData = ilacText.split('\n').map(row => row.trim()).filter(row => row.length > 0);
+
+            document.getElementById('result').className = "info";
+            document.getElementById('result').innerText = `Veritabanları hazır! Toplam ${urunlerData.length} ürün ve ${ilaclarData.length} ilaç kaydı taranmaya hazır.`;
+        } catch (error) {
+            document.getElementById('result').className = "error";
+            document.getElementById('result').innerText = "⚠️ 'urunler.csv' veya 'ilaclar.csv' dosyaları yüklenirken hata oluştu. Dosya adlarını kontrol edin.";
+        }
     };
 
-    function searchCSV() {
+    function searchBothFiles() {
         const input = document.getElementById('searchInput').value.trim().toLowerCase();
         const resultDiv = document.getElementById('result');
 
         if (!input) {
             resultDiv.className = "error";
-            resultDiv.innerText = "⚠️ Lütfen aranacak bir ürün veya marka adı girin.";
+            resultDiv.innerText = "⚠️ Lütfen aranacak bir ürün veya ilaç adı girin.";
             return;
         }
 
-        if (csvData.length === 0) {
+        if (urunlerData.length === 0 && ilaclarData.length === 0) {
             resultDiv.className = "error";
-            resultDiv.innerText = "⚠️ Veritabanı henüz yüklenmedi veya boş.";
+            resultDiv.innerText = "⚠️ Veritabanları henüz yüklenmedi.";
             return;
         }
 
-        // CSV içinde eşleşen satırları bulma
-        const matches = csvData.filter(row => row.toLowerCase().includes(input));
+        // İki dosyada ayrı ayrı arama yapıyoruz
+        const matchingUrunler = urunlerData.filter(row => row.toLowerCase().includes(input));
+        const matchingIlaclar = ilaclarData.filter(row => row.toLowerCase().includes(input));
 
-        if (matches.length > 0) {
+        let outputHTML = "";
+
+        if (matchingUrunler.length > 0) {
+            outputHTML += `<span class="category-title">🍞 Gıda / Ürün Sonuçları (${matchingUrunler.length}):</span>`;
+            outputHTML += matchingUrunler.slice(0, 10).join('<br>') + "<br>";
+        }
+
+        if (matchingIlaclar.length > 0) {
+            outputHTML += `<span class="category-title">💊 İlaç Sonuçları (${matchingIlaclar.length}):</span>`;
+            outputHTML += matchingIlaclar.slice(0, 10).join('<br>') + "<br>";
+        }
+
+        if (outputHTML !== "") {
             resultDiv.className = "success";
-            resultDiv.innerHTML = `✅ <strong>${matches.length} sonuç bulundu:</strong><br>` + matches.slice(0, 10).join('<br>');
-            if (matches.length > 10) {
-                resultDiv.innerHTML += `<br><small>...ve ${matches.length - 10} sonuç daha (ilk 10 tanesi gösteriliyor)</small>`;
-            }
+            resultDiv.innerHTML = outputHTML;
         } else {
             resultDiv.className = "error";
-            resultDiv.innerText = `❌ "${input.toUpperCase()}" veritabanında bulunamadı.`;
+            resultDiv.innerText = `❌ "${input.toUpperCase()}" veritabanlarında bulunamadı.`;
         }
     }
 
     function handleKeyPress(event) {
         if (event.key === 'Enter') {
-            searchCSV();
+            searchBothFiles();
         }
     }
 </script>
