@@ -3,54 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Güvenli Gıda ve İlaç Arama Asistanı</title>
+    
+    <!-- Google ve Arama Motorları İçin SEO Etiketleri -->
+    <title>Çölyak Güvenli Gıda ve İlaç Arama Rehberi</title>
+    <meta name="description" content="Çölyak hastaları için güvenli gıda ve ilaç sorgulama rehberi. Binlerce ürünü ve ilacı tek arama çubuğundan anında güvenle sorgulayın.">
+    <meta name="keywords" content="çölyak, glutenli, glutensiz gıda, güvenli ilaç, çölyak rehberi, gıda arama">
+    <meta name="author" content="Çölyak Arama Asistanı">
+
+    <!-- Tailwind CSS ile modern ve şık tasarım -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
 
+    <!-- Üst Başlık -->
     <header class="bg-slate-900 shadow-sm py-6 px-4 text-white">
         <div class="max-w-2xl mx-auto text-center">
-            <h1 class="text-2xl md:text-3xl font-bold text-emerald-400">Çölyak Gıda ve İlaç Rehberi</h1>
-            <p class="text-sm text-slate-300 mt-1">Gıda ve ilaçları tek noktadan hızlıca sorgulayın</p>
+            <h1 class="text-2xl md:text-3xl font-bold text-emerald-400">Çölyak Güvenli Yaşam Rehberi</h1>
+            <p class="text-sm text-slate-300 mt-1">Gıda ve ilaçları tek arama çubuğundan güvenle sorgulayın</p>
         </div>
     </header>
 
+    <!-- Ana İçerik -->
     <main class="max-w-2xl mx-auto w-full px-4 py-8 flex-grow">
         
+        <!-- Arama Çubuğu -->
         <div class="relative mb-6">
             <input 
                 type="text" 
                 id="aramaInput" 
-                placeholder="Gıda veya ilaç adı yazın (Örn: Süt, Parol)..." 
-                class="w-full px-4 py-3 pl-12 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-base bg-white"
+                placeholder="Ürün veya ilaç adı yazın (Örn: Süt, Parol)..." 
+                class="w-full px-4 py-4 pl-12 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-base bg-white transition-all"
                 autofocus
             >
-            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-lg">
                 🔍
             </span>
         </div>
 
-        <div id="durumMetni" class="text-center text-sm text-slate-500 mb-4">
-            Veriler yükleniyor...
+        <!-- Durum Bilgisi -->
+        <div id="durumMetni" class="text-center text-sm text-slate-500 mb-6">
+            Veriler yükleniyor, lütfen bekleyin...
         </div>
 
+        <!-- Sonuçların Listelendiği Alan -->
         <div id="sonucListesi" class="space-y-3"></div>
 
     </main>
 
-    <footer class="text-center py-6 text-xs text-slate-400 border-t border-slate-200 mt-auto">
-        GitHub Pages - Canlı Sistem
+    <!-- Alt Bilgi -->
+    <footer class="text-center py-6 text-xs text-slate-400 border-t border-slate-200 mt-auto bg-white">
+        GitHub Pages üzerinde barındırılmaktadır • Güvenli Arama Asistanı
     </footer>
 
+    <!-- JavaScript Optimizasyon ve Arama Mantığı -->
     <script>
-        // Verileri önceden işlenmiş nesneler (object) olarak tutarak aramayı ışık hızına çıkarıyoruz
         let tumVeriler = [];
 
         async function verileriYukle() {
             const durumEl = document.getElementById("durumMetni");
             try {
+                // Tarayıcı önbelleğine takılmasın diye zaman damgası ekliyoruz
                 const timestamp = new Date().getTime();
                 
+                // Hem ilaçları (ayse.csv) hem gıdaları (urunler.csv) yüklüyoruz
                 const [ilacResponse, gidaResponse] = await Promise.all([
                     fetch('ayse.csv?v=' + timestamp),
                     fetch('urunler.csv?v=' + timestamp).catch(() => null)
@@ -68,28 +83,28 @@
                     birlesikVeri = birlesikVeri.concat(gidaText.split(/\r?\n/));
                 }
 
-                // Arama performansını artırmak için veriyi 1 kere işliyoruz
+                // Performans için verileri önceden kelimelerine ayırıp hafızaya alıyoruz
                 tumVeriler = birlesikVeri
                     .filter(satir => satir.trim() !== "")
                     .map(satir => {
                         const kucukSatir = satir.toLocaleLowerCase('tr-TR');
-                        // Satırdaki kelimeleri sadece 1 kez ayırıp hafızaya alıyoruz
-                        const kelimeler = kucukSatir.split(/[\s,\-\(\)]+/);
+                        const kelimeler = kucukSatir.split(/[^a-zA-ZçÇğĞıİöÖşŞüÜ0-9]+/);
                         return { orjinal: satir, kelimeler: kelimeler };
                     });
 
-                durumEl.textContent = `Toplam ${tumVeriler.length} kayıt yüklendi. Arama yapabilirsiniz.`;
+                durumEl.textContent = `Toplam ${tumVeriler.length} kayıt (gıda ve ilaç) hazır. Arama yapabilirsiniz.`;
+                durumEl.classList.add("text-emerald-600", "font-medium");
             } catch (error) {
                 console.error(error);
-                durumEl.textContent = "Veriler yüklenirken bir hata oluştu!";
+                durumEl.textContent = "Veriler yüklenirken bir hata oluştu. Dosya adlarını kontrol edin.";
                 durumEl.classList.add("text-rose-500");
             }
         }
 
         verileriYukle();
 
+        // Arama Mekanizması
         const aramaInput = document.getElementById("aramaInput");
-        
         aramaInput.addEventListener("input", (e) => {
             const aranan = e.target.value.trim().toLocaleLowerCase('tr-TR');
             const sonucListesi = document.getElementById("sonucListesi");
@@ -97,30 +112,30 @@
 
             if (aranan.length === 0) return;
 
-            // Hızlı Filtreleme: Önceden hazırlanmış kelime dizisinde tam eşleşme arar
+            // Hızlı tam kelime eşleşmesi (nefes / efes ayrımı)
             const eslesenler = [];
             for (let i = 0; i < tumVeriler.length; i++) {
                 if (tumVeriler[i].kelimeler.includes(aranan)) {
                     eslesenler.push(tumVeriler[i].orjinal);
-                    if (eslesenler.length >= 50) break; // İlk 50 sonuçta dur (performans artırır)
+                    if (eslesenler.length >= 50) break; // Sayfa hızlı kalsın diye ilk 50 sonuç
                 }
             }
 
             if (eslesenler.length === 0) {
                 sonucListesi.innerHTML = `
-                    <div class="bg-white p-4 rounded-xl shadow-sm text-center text-slate-500 border border-slate-100">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm text-center text-slate-500 border border-slate-100">
                         Aradığınız kriterlere uygun sonuç bulunamadı.
                     </div>`;
                 return;
             }
 
-            // HTML çıktılarını tek seferde ekrana bas (DOM yükünü hafifletir)
+            // Sonuçları ekrana basma
             let htmlIcerik = "";
             eslesenler.forEach(item => {
                 htmlIcerik += `
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:border-emerald-300 transition-all">
                         <span class="font-medium text-slate-700">${item}</span>
-                        <span class="text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full font-semibold">Uygun / Güvenli</span>
+                        <span class="text-xs bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full font-semibold">Güvenli / Uygun</span>
                     </div>`;
             });
             sonucListesi.innerHTML = htmlIcerik;
