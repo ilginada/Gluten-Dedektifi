@@ -146,3 +146,45 @@
 
 </body>
 </html>
+// Arama inputuna her yazı yazıldığında çalışacak fonksiyon
+const aramaInput = document.getElementById("aramaInput");
+aramaInput.addEventListener("input", (e) => {
+    const aranan = e.target.value.trim().toLowerCase();
+    const sonucListesi = document.getElementById("sonucListesi");
+    sonucListesi.innerHTML = "";
+
+    if (aranan.length === 0) {
+        return; 
+    }
+
+    // Doğru mantık: Satırı kelimelerine ayırıp aranan kelimeyle tam eşleşen var mı diye bakıyoruz.
+    // Bu sayede "efes" arandığında "nefes" kelimesi ASLA eşleşmez.
+    const eslesenler = tumVeriler.filter(item => {
+        const satirKucuk = item.toLowerCase();
+        // Satırı boşluklara ve noktalama işaretlerine göre kelimelere bölelim
+        const kelimeler = satirKucuk.split(/[\s,\-\(\)]+/);
+        
+        // Kelimelerden herhangi biri tam olarak aranan kelimeye eşit mi?
+        return kelimeler.includes(aranan);
+    }).slice(0, 50);
+
+    if (eslesenler.length === 0) {
+        sonucListesi.innerHTML = `
+            <div class="bg-white p-4 rounded-xl shadow-sm text-center text-slate-500 border border-slate-100">
+                Aradığınız kriterlere uygun sonuç bulunamadı.
+            </div>`;
+        return;
+    }
+
+    // Sonuçları ekrana basıyoruz
+    eslesenler.forEach(item => {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:border-emerald-200 transition-all";
+        
+        itemDiv.innerHTML = `
+            <span class="font-medium text-slate-700">${item}</span>
+            <span class="text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full font-semibold">Uygun / Güvenli</span>
+        `;
+        sonucListesi.appendChild(itemDiv);
+    });
+});
