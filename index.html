@@ -1,153 +1,257 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Google Doğrulama Kodu -->
-    <meta name="google-site-verification" content="OArqvvslfpSel8d40VEN0Dgc5xB4xRpsqlqCcS1pX5k" />
 
-    <!-- Google ve Arama Motorları İçin SEO Etiketleri -->
-    <title>Çölyak Güvenli Gıda ve İlaç Arama Rehberi</title>
-    <meta name="description" content="Çölyak hastaları için güvenli gıda ve ilaç sorgulama rehberi. Binlerce ürünü ve ilacı tek arama çubuğundan anında güvenle sorgulayın.">
-    <meta name="keywords" content="çölyak, glutenli, glutensiz gıda, güvenli ilaç, çölyak rehberi, gıda arama">
-    <meta name="author" content="Çölyak Arama Asistanı">
+    <title>Çölyak Gıda ve İlaç Arama</title>
 
-    <!-- Tailwind CSS ile modern ve şık tasarım -->
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
-
-    <!-- Üst Başlık -->
-    <header class="bg-slate-900 shadow-sm py-6 px-4 text-white">
-        <div class="max-w-2xl mx-auto text-center">
-            <h1 class="text-2xl md:text-3xl font-bold text-emerald-400">Çölyak Güvenli Yaşam Rehberi</h1>
-            <p class="text-sm text-slate-300 mt-1">Gıda ve ilaçları tek arama çubuğundan güvenle sorgulayın</p>
-        </div>
-    </header>
-
-    <!-- Ana İçerik -->
-    <main class="max-w-2xl mx-auto w-full px-4 py-8 flex-grow">
-        
-        <!-- Arama Çubuğu -->
-        <div class="relative mb-6">
-            <input 
-                type="text" 
-                id="aramaInput" 
-                placeholder="Ürün veya ilaç adı yazın (Örn: Süt, Parol)..." 
-                class="w-full px-4 py-4 pl-12 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-base bg-white transition-all"
-                autofocus
-            >
-            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-lg">
-                🔍
-            </span>
-        </div>
-
-        <!-- Durum Bilgisi -->
-        <div id="durumMetni" class="text-center text-sm text-slate-500 mb-6">
-            Veriler yükleniyor, lütfen bekleyin...
-        </div>
-
-        <!-- Sonuçların Listelendiği Alan -->
-        <div id="sonucListesi" class="space-y-3"></div>
-
-    </main>
-
-    <!-- Alt Bilgi -->
-    <footer class="text-center py-6 text-xs text-slate-400 border-t border-slate-200 mt-auto bg-white">
-        GitHub Pages üzerinde barındırılmaktadır • Güvenli Arama Asistanı
-    </footer>
-
-    <!-- JavaScript Optimizasyon ve Arama Mantığı -->
-    <script>
-        let tumVeriler = [];
-
-        async function verileriYukle() {
-            const durumEl = document.getElementById("durumMetni");
-            try {
-                const timestamp = new Date().getTime();
-                
-                const [ilacResponse, gidaResponse] = await Promise.all([
-                    fetch('ayse.csv?v=' + timestamp),
-                    fetch('urunler.csv?v=' + timestamp).catch(() => null)
-                ]);
-
-                let birlesikVeri = [];
-
-                if (ilacResponse && ilacResponse.ok) {
-                    const ilacText = await ilacResponse.text();
-                    birlesikVeri = birlesikVeri.concat(ilacText.split(/\r?\n/));
-                }
-
-                if (gidaResponse && gidaResponse.ok) {
-                    const gidaText = await gidaResponse.text();
-                    birlesikVeri = birlesikVeri.concat(gidaText.split(/\r?\n/));
-                }
-
-                tumVeriler = birlesikVeri
-                    .filter(satir => satir.trim() !== "")
-                    .map(satir => {
-                        const kucukSatir = satir.toLocaleLowerCase('tr-TR');
-                        const kelimeler = kucukSatir.split(/[^a-zA-ZçÇğĞıİöÖşŞüÜ0-9]+/);
-                        return { orjinal: satir, kelimeler: kelimeler };
-                    });
-
-                durumEl.textContent = `Toplam ${tumVeriler.length} kayıt (gıda ve ilaç) hazır. Arama yapabilirsiniz.`;
-                durumEl.classList.add("text-emerald-600", "font-medium");
-            } catch (error) {
-                console.error(error);
-                durumEl.textContent = "Veriler yüklenirken bir hata oluştu. Dosya adlarını kontrol edin.";
-                durumEl.classList.add("text-rose-500");
-            }
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
         }
 
-        verileriYukle();
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
 
-        const aramaInput = document.getElementById("aramaInput");
-        aramaInput.addEventListener("input", (e) => {
-            const aranan = e.target.value.trim().toLocaleLowerCase('tr-TR');
-            const sonucListesi = document.getElementById("sonucListesi");
-            sonucListesi.innerHTML = "";
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
 
-            if (aranan.length === 0) return;
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
 
-            const eslesenler = [];
-            for (let i = 0; i < tumVeriler.length; i++) {
-                if (tumVeriler[i].kelimeler.includes(aranan)) {
-                    eslesenler.push(tumVeriler[i].orjinal);
-                    if (eslesenler.length >= 50) break;
-                }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            max-height: 350px;
+            overflow-y: auto;
+            white-space: pre-line;
+            overflow-wrap: anywhere;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Çölyak Güvenli Ürün & İlaç Sorgulama</h2>
+
+    <div class="search-box">
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Ürün veya marka adı yazın..."
+        >
+
+        <button id="searchButton">Sorgula</button>
+
+    </div>
+
+    <div id="result" class="info">
+        Veritabanı yükleniyor, lütfen bekleyin...
+    </div>
+
+</div>
+
+<script>
+
+    "use strict";
+
+    let csvData = [];
+
+    const resultDiv = document.getElementById("result");
+    const searchInput = document.getElementById("searchInput");
+    const searchButton = document.getElementById("searchButton");
+
+    // Veritabanını güvenli şekilde yükle
+    async function loadDatabase() {
+
+        try {
+
+            const response = await fetch("urunler.csv");
+
+            if (!response.ok) {
+                throw new Error("CSV dosyası yüklenemedi");
             }
 
-            if (eslesenler.length === 0) {
-                sonucListesi.innerHTML = `
-                    <div class="bg-white p-5 rounded-2xl shadow-sm text-center text-slate-500 border border-slate-100">
-                        Aradığınız kriterlere uygun sonuç bulunamadı.
-                    </div>`;
-                return;
-            }
+            const data = await response.text();
 
-            let htmlIcerik = "";
-            eslesenler.forEach(item => {
-                htmlIcerik += `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:border-emerald-300 transition-all">
-                        <span class="font-medium text-slate-700">${item}</span>
-                        <span class="text-xs bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full font-semibold">Güvenli / Uygun</span>
-                    </div>`;
+            csvData = data
+                .split(/\r?\n/)
+                .map(row => row.trim())
+                .filter(row => row.length > 0);
+
+            resultDiv.className = "info";
+
+            resultDiv.textContent =
+                "Veritabanı başarıyla yüklendi! Toplam " +
+                csvData.length +
+                " kayıt taranmaya hazır.";
+
+        } catch (error) {
+
+            resultDiv.className = "error";
+
+            resultDiv.textContent =
+                "⚠️ Veritabanı yüklenemedi. urunler.csv dosyasını kontrol edin.";
+
+        }
+
+    }
+
+    // Güvenli ürün arama
+    function searchCSV() {
+
+        const input = searchInput.value.trim().toLocaleLowerCase("tr-TR");
+
+        resultDiv.replaceChildren();
+
+        if (!input) {
+
+            resultDiv.className = "error";
+            resultDiv.textContent =
+                "⚠️ Lütfen aranacak bir ürün veya marka adı girin.";
+
+            return;
+
+        }
+
+        if (csvData.length === 0) {
+
+            resultDiv.className = "error";
+            resultDiv.textContent =
+                "⚠️ Veritabanı henüz yüklenmedi veya boş.";
+
+            return;
+
+        }
+
+        const matches = csvData.filter(row =>
+            row.toLocaleLowerCase("tr-TR").includes(input)
+        );
+
+        if (matches.length > 0) {
+
+            resultDiv.className = "success";
+
+            // innerHTML yerine güvenli DOM işlemleri
+            const heading = document.createElement("strong");
+
+            heading.textContent =
+                "✅ " + matches.length + " sonuç bulundu:";
+
+            resultDiv.appendChild(heading);
+
+            matches.slice(0, 10).forEach(row => {
+
+                const line = document.createElement("div");
+
+                // CSV içeriğini HTML olarak çalıştırmaz
+                line.textContent = row;
+
+                resultDiv.appendChild(line);
+
             });
-            sonucListesi.innerHTML = htmlIcerik;
-        });
-    </script>
-    <footer style="text-align: center; margin-top: 40px; padding: 20px; font-size: 13px; color: #555; border-top: 1px solid #eee; background-color: #f9f9f9;">
-    <p>© 2026 Gluten Dedektifi | Tüm Hakları Saklıdır.</p>
-    <p style="margin: 10px auto; max-width: 700px; font-size: 12px; color: #666; line-height: 1.5;">
-        <strong>Yasal Uyarı:</strong> Bu site bilgilendirme amaçlıdır; tıbbi tavsiye, teşhis veya tedavi niteliği taşımaz. İlaç ve gıda kullanımlarında üretici ambalajını kontrol ediniz.
-    </p>
-    <p style="margin-top: 8px;">
-        <a href="gizlilik.html" style="color: #3498db; text-decoration: none;">Gizlilik Politikası ve Detaylı Metin</a>
-    </p>
-</footer>
 
-</footer>
+            if (matches.length > 10) {
+
+                const more = document.createElement("small");
+
+                more.textContent =
+                    "...ve " + (matches.length - 10) +
+                    " sonuç daha (ilk 10 tanesi gösteriliyor).";
+
+                resultDiv.appendChild(more);
+
+            }
+
+        } else {
+
+            resultDiv.className = "error";
+
+            resultDiv.textContent =
+                '❌ "' + input.toUpperCase() +
+                '" veritabanında bulunamadı.';
+
+        }
+
+    }
+
+    // Buton ile arama
+    searchButton.addEventListener("click", searchCSV);
+
+    // Enter tuşu ile arama
+    searchInput.addEventListener("keydown", function(event) {
+
+        if (event.key === "Enter") {
+            searchCSV();
+        }
+
+    });
+
+    // Sayfa açıldığında veritabanını yükle
+    window.addEventListener("DOMContentLoaded", loadDatabase);
+
+</script>
+
 </body>
 </html>
