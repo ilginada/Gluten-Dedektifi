@@ -52,6 +52,18 @@
   </p>
 </div>
         
+<!-- GEÇİCİ İLAÇ BÖLÜMÜ DUYURUSU -->
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-center">
+    <p class="font-bold text-amber-800 mb-2">
+        İlaç Arama Bölümü Geçici Olarak Kapalı
+    </p>
+    <p class="text-sm text-amber-700">
+        İlaç arama hizmetimiz, ilgili Bakanlık ve yetkili kurumlardan
+        resmî görüş beklenmesi nedeniyle geçici olarak kullanıma kapatılmıştır.
+    </p>
+</div>
+
+        
         <!-- Arama Çubuğu -->
         <div class="relative mb-6">
             <input 
@@ -92,25 +104,17 @@
         try {
             const timestamp = Date.now();
 
-            const [ilacResponse, gidaResponse] = await Promise.all([
-                fetch('ayse.csv?v=' + timestamp),
-                fetch('urunler.csv?v=' + timestamp).catch(() => null)
-            ]);
+            const gidaResponse = await fetch('urunler.csv?v=' + timestamp);
 
-            let birlesikVeri = [];
+let birlesikVeri = [];
 
-            if (ilacResponse && ilacResponse.ok) {
-                const ilacText = await ilacResponse.text();
-                birlesikVeri = birlesikVeri.concat(
-                    ilacText.split(/\r?\n/)
-                );
-            }
+if (gidaResponse.ok) {
+    const gidaText = await gidaResponse.text();
 
-            if (gidaResponse && gidaResponse.ok) {
-                const gidaText = await gidaResponse.text();
-                birlesikVeri = birlesikVeri.concat(
-                    gidaText.split(/\r?\n/)
-                );
+    birlesikVeri = birlesikVeri.concat(
+        gidaText.split(/\r?\n/)
+    );
+}
             }
 
             tumVeriler = birlesikVeri
