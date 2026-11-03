@@ -52,22 +52,21 @@
   </p>
 </div>
         
-<!-- GEÇİCİ İLAÇ BÖLÜMÜ DUYURUSU -->
-<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-center">
-    <p class="font-bold text-amber-800 mb-2">
-        İlaç Arama Bölümü Geçici Olarak Kapalı
-    </p>
-    <p class="text-sm text-amber-700">
-        İlaç arama hizmetimiz, ilgili Bakanlık ve yetkili kurumlardan
-        resmî görüş beklenmesi nedeniyle geçici olarak kullanıma kapatılmıştır.
-    </p>
-</div>
-
-        
         <!-- Arama Çubuğu -->
         <div class="relative mb-6">
             <input 
                 type="text" 
+                <div style="background:#fff7ed; border:1px solid #fed7aa; 
+padding:16px; border-radius:12px; margin:15px 0;">
+  <h3 style="color:#9a3412; margin:0 0 8px;">
+    💊 İlaç Arama Bölümü – Geçici Olarak Kapalı
+  </h3>
+  <p style="color:#7c2d12; margin:0;">
+    İlgili yetkili kurumlardan resmî görüş alınması sürecinde
+    ilaç arama bölümü geçici olarak hizmet dışıdır.
+    Resmî değerlendirme tamamlandığında yeniden açılacaktır.
+  </p>
+</div>
                 id="aramaInput" 
                 placeholder="Ürün veya ilaç adı yazın (Örn: Ekmek, Çikolata)..." 
                 class="w-full px-4 py-4 pl-12 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-base bg-white transition-all"
@@ -104,17 +103,25 @@
         try {
             const timestamp = Date.now();
 
-            const gidaResponse = await fetch('urunler.csv?v=' + timestamp);
+            const [ilacResponse, gidaResponse] = await Promise.all([
+                fetch('ayse.csv?v=' + timestamp),
+                fetch('urunler.csv?v=' + timestamp).catch(() => null)
+            ]);
 
-let birlesikVeri = [];
+            let birlesikVeri = [];
 
-if (gidaResponse.ok) {
-    const gidaText = await gidaResponse.text();
+            if (ilacResponse && ilacResponse.ok) {
+                const ilacText = await ilacResponse.text();
+                birlesikVeri = birlesikVeri.concat(
+                    ilacText.split(/\r?\n/)
+                );
+            }
 
-    birlesikVeri = birlesikVeri.concat(
-        gidaText.split(/\r?\n/)
-    );
-}
+            if (gidaResponse && gidaResponse.ok) {
+                const gidaText = await gidaResponse.text();
+                birlesikVeri = birlesikVeri.concat(
+                    gidaText.split(/\r?\n/)
+                );
             }
 
             tumVeriler = birlesikVeri
