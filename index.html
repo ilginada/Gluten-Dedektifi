@@ -1,321 +1,105 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Çölyak Gıda ve İlaç Arama</title>
-
+    <title>Gluten-Dedektifi | Güvenli Ürün Arama</title>
+    <!-- PapaParse kütüphanesi ile CSV dosyalarını kolayca okuyoruz -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
+        :root {
+            --primary-color: #2b6cb0;
+            --bg-color: #f7fafc;
+            --text-color: #2d3748;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+        }
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
             padding: 20px;
-            color: #333;
         }
-
         .container {
-            max-width: 700px;
+            max-width: 800px;
             margin: 0 auto;
-            background: #fff;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
-
-        h2 {
+        h1 {
             text-align: center;
-            color: #2c3e50;
+            color: var(--primary-color);
+            margin-bottom: 25px;
         }
-
         .search-box {
-            display: flex;
-            gap: 10px;
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
             margin-bottom: 20px;
         }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
+        .search-box:focus {
+            border-color: var(--primary-color);
         }
-
-        button {
-            padding: 12px 20px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
+        .results-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
         }
-
-        button:hover {
-            background-color: #2980b9;
+        .result-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-
-        #result {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 5px;
-            font-size: 16px;
-            max-height: 350px;
-            overflow-y: auto;
-            white-space: pre-line;
-            overflow-wrap: anywhere;
+        .result-item:last-child {
+            border-bottom: none;
         }
-
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .product-name {
+            font-weight: 600;
         }
-
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .product-source {
+            font-size: 12px;
+            background: #edf2f7;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #4a5568;
         }
-
-        .info {
-            background-color: #e2e3e5;
-            color: #383d41;
+        .loading {
+            text-align: center;
+            color: #718096;
+            font-style: italic;
         }
     </style>
 </head>
-
 <body>
 
-<div class="container">
-
-    <h2>Çölyak Güvenli Ürün & İlaç Sorgulama</h2
-                                 
-<!-- GIDA SORGULAMA UYARISI -->
-<div class="warning-box food-warning">
-    <strong>⚠️ Gıda Bilgilendirme Uyarısı</strong>
-    <p>
-        Bu listedeki ürün bilgileri bilgilendirme amacıyla
-        sunulmaktadır. Ürün içerikleri, üretim koşulları ve
-        çapraz bulaşma riskleri zaman içerisinde değişebilir.
-
-        Bir ürünün listede bulunması, her üretim partisinin
-        çölyak hastaları için kesinlikle güvenli olduğunu
-        garanti etmez.
-
-        Tüketmeden önce güncel ambalaj bilgilerini ve
-        üretici açıklamalarını kontrol ediniz.
-    </p>
-    <small>
-        Veri kaynağı: Çölyak Derneği ürün listesi.
-    </small>
-</div>
-
-<!-- İLAÇ SORGULAMA UYARISI -->
-<div class="warning-box medicine-warning">
-    <strong>⚠️ İlaç Bilgilendirme Uyarısı</strong>
-    <p>
-        Bu bölümdeki bilgiler yalnızca ilaçların gluten
-        içeriği hakkında genel bilgilendirme amacı taşır.
-
-        Yardımcı maddeler üreticiye ve ürün formuna göre
-        değişebilir. Bir ilacın gluten içermediğinin
-        belirtilmesi, çölyak hastaları için kesinlikle
-        uygun olduğu anlamına gelmez.
-
-        İlaç kullanmadan önce doktorunuza veya eczacınıza
-        danışınız. Güncel bilgileri üreticiden teyit ediniz.
-    </p>
-</div>
-
-<style>
-.warning-box {
-    padding: 15px;
-    margin: 15px 0;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-.food-warning {
-    background: #fff8e6;
-    border: 1px solid #e8c66a;
-    color: #684d12;
-}
-
-.medicine-warning {
-    background: #fff0f0;
-    border: 1px solid #e6aaaa;
-    color: #792b2b;
-}
-
-.warning-box p {
-    margin-bottom: 5px;
-}
-</style>
-               
-
-    <div class="search-box">
-
-        <input
-            type="text"
-            id="searchInput"
-            placeholder="Ürün veya marka adı yazın..."
-        >
-
-        <button id="searchButton">Sorgula</button>
-
+    <div class="container">
+        <h1>Gluten-Dedektifi</h1>
+        <input type="text" id="searchInput" class="search-box" placeholder="Ürün veya marka ara..." oninput="filterProducts()">
+        
+        <div id="loading" class="loading">Veriler yükleniyor...</div>
+        <ul id="resultsList" class="results-list"></ul>
     </div>
 
-    <div id="result" class="info">
-        Veritabanı yükleniyor, lütfen bekleyin...
-    </div>
+    <script>
+        let allProducts = [];
 
-</div>
-
-<script>
-
-    "use strict";
-
-    let csvData = [];
-
-    const resultDiv = document.getElementById("result");
-    const searchInput = document.getElementById("searchInput");
-    const searchButton = document.getElementById("searchButton");
-
-    // Veritabanını güvenli şekilde yükle
-    async function loadDatabase() {
-
-        try {
-
-            const response = await fetch("urunler.csv");
-
-            if (!response.ok) {
-                throw new Error("CSV dosyası yüklenemedi");
-            }
-
-            const data = await response.text();
-
-            csvData = data
-                .split(/\r?\n/)
-                .map(row => row.trim())
-                .filter(row => row.length > 0);
-
-            resultDiv.className = "info";
-
-            resultDiv.textContent =
-                "Veritabanı başarıyla yüklendi! Toplam " +
-                csvData.length +
-                " kayıt taranmaya hazır.";
-
-        } catch (error) {
-
-            resultDiv.className = "error";
-
-            resultDiv.textContent =
-                "⚠️ Veritabanı yüklenemedi. urunler.csv dosyasını kontrol edin.";
-
-        }
-
-    }
-
-    // Güvenli ürün arama
-    function searchCSV() {
-
-        const input = searchInput.value.trim().toLocaleLowerCase("tr-TR");
-
-        resultDiv.replaceChildren();
-
-        if (!input) {
-
-            resultDiv.className = "error";
-            resultDiv.textContent =
-                "⚠️ Lütfen aranacak bir ürün veya marka adı girin.";
-
-            return;
-
-        }
-
-        if (csvData.length === 0) {
-
-            resultDiv.className = "error";
-            resultDiv.textContent =
-                "⚠️ Veritabanı henüz yüklenmedi veya boş.";
-
-            return;
-
-        }
-
-        const matches = csvData.filter(row =>
-            row.toLocaleLowerCase("tr-TR").includes(input)
-        );
-
-        if (matches.length > 0) {
-
-            resultDiv.className = "success";
-
-            // innerHTML yerine güvenli DOM işlemleri
-            const heading = document.createElement("strong");
-
-            heading.textContent =
-                "✅ " + matches.length + " sonuç bulundu:";
-
-            resultDiv.appendChild(heading);
-
-            matches.slice(0, 10).forEach(row => {
-
-                const line = document.createElement("div");
-
-                // CSV içeriğini HTML olarak çalıştırmaz
-                line.textContent = row;
-
-                resultDiv.appendChild(line);
-
-            });
-
-            if (matches.length > 10) {
-
-                const more = document.createElement("small");
-
-                more.textContent =
-                    "...ve " + (matches.length - 10) +
-                    " sonuç daha (ilk 10 tanesi gösteriliyor).";
-
-                resultDiv.appendChild(more);
-
-            }
-
-        } else {
-
-            resultDiv.className = "error";
-
-            resultDiv.textContent =
-                '❌ "' + input.toUpperCase() +
-                '" veritabanında bulunamadı.';
-
-        }
-
-    }
-
-    // Buton ile arama
-    searchButton.addEventListener("click", searchCSV);
-
-    // Enter tuşu ile arama
-    searchInput.addEventListener("keydown", function(event) {
-
-        if (event.key === "Enter") {
-            searchCSV();
-        }
-
-    });
-
-    // Sayfa açıldığında veritabanını yükle
-    window.addEventListener("DOMContentLoaded", loadDatabase);
-
-</script>
-
-</body>
-</html>
+        // CSV dosyalarını yükleme fonksiyonu
+        async function loadDatasets() {
+            try {
+                // ayse.csv ve urunler.csv dosyalarınızı projeye göre buraya ekledik
+                const files = ['ayse.csv', 'urunler.csv'];
+                
+                for (let file of files) {
+                    const response = await fetch(file);
+                    if (!response.ok) continue;
+                    const csvText = await response.text();
