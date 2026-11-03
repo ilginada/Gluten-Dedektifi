@@ -82,84 +82,149 @@
     </footer>
 
     <!-- JavaScript Optimizasyon ve Arama Mantığı -->
-    <script>
-        let tumVeriler = [];
+   ```html
+<script>
+    let tumVeriler = [];
 
-        async function verileriYukle() {
-            const durumEl = document.getElementById("durumMetni");
-            try {
-                const timestamp = new Date().getTime();
-                
-                const [ilacResponse, gidaResponse] = await Promise.all([
-                    fetch('ayse.csv?v=' + timestamp),
-                    fetch('urunler.csv?v=' + timestamp).catch(() => null)
-                ]);
+    async function verileriYukle() {
+        const durumEl = document.getElementById("durumMetni");
 
-                let birlesikVeri = [];
+        try {
+            const timestamp = Date.now();
 
-                if (ilacResponse && ilacResponse.ok) {
-                    const ilacText = await ilacResponse.text();
-                    birlesikVeri = birlesikVeri.concat(ilacText.split(/\r?\n/));
-                }
+            const [ilacResponse, gidaResponse] = await Promise.all([
+                fetch('ayse.csv?v=' + timestamp),
+                fetch('urunler.csv?v=' + timestamp).catch(() => null)
+            ]);
 
-                if (gidaResponse && gidaResponse.ok) {
-                    const gidaText = await gidaResponse.text();
-                    birlesikVeri = birlesikVeri.concat(gidaText.split(/\r?\n/));
-                }
+            let birlesikVeri = [];
 
-                tumVeriler = birlesikVeri
-                    .filter(satir => satir.trim() !== "")
-                    .map(satir => {
-                        const kucukSatir = satir.toLocaleLowerCase('tr-TR');
-                        const kelimeler = kucukSatir.split(/[^a-zA-ZçÇğĞıİöÖşŞüÜ0-9]+/);
-                        return { orjinal: satir, kelimeler: kelimeler };
-                    });
+            if (ilacResponse && ilacResponse.ok) {
+                const ilacText = await ilacResponse.text();
+                birlesikVeri = birlesikVeri.concat(
+                    ilacText.split(/\r?\n/)
+                );
+            }
 
-                durumEl.textContent = `Toplam ${tumVeriler.length} kayıt (gıda ve ilaç) hazır. Arama yapabilirsiniz.`;
-                durumEl.classList.add("text-emerald-600", "font-medium");
-            } catch (error) {
-                console.error(error);
-                durumEl.textContent = "Veriler yüklenirken bir hata oluştu. Dosya adlarını kontrol edin.";
-                durumEl.classList.add("text-rose-500");
+            if (gidaResponse && gidaResponse.ok) {
+                const gidaText = await gidaResponse.text();
+                birlesikVeri = birlesikVeri.concat(
+                    gidaText.split(/\r?\n/)
+                );
+            }
+
+            tumVeriler = birlesikVeri
+                .filter(satir => satir.trim() !== "")
+                .map(satir => {
+                    const kucukSatir =
+                        satir.toLocaleLowerCase('tr-TR');
+
+                    const kelimeler = kucukSatir.split(
+                        /[^a-zA-ZçÇğĞıİöÖşŞüÜ0-9]+/
+                    );
+
+                    return {
+                        orjinal: satir,
+                        kelimeler: kelimeler
+                    };
+                });
+
+            durumEl.textContent =
+                `Toplam ${tumVeriler.length} kayıt yüklendi. Arama yapabilirsiniz.`;
+
+            durumEl.classList.add(
+                "text-emerald-600",
+                "font-medium"
+            );
+
+        } catch (error) {
+            console.error("Veri yükleme hatası:", error);
+
+            durumEl.textContent =
+                "Veriler yüklenirken hata oluştu. Dosyaları kontrol edin.";
+
+            durumEl.classList.add("text-rose-500");
+        }
+    }
+
+    verileriYukle();
+
+    const aramaInput = document.getElementById("aramaInput");
+
+    aramaInput.addEventListener("input", (e) => {
+
+        const aranan = e.target.value
+            .trim()
+            .toLocaleLowerCase('tr-TR');
+
+        const sonucListesi =
+            document.getElementById("sonucListesi");
+
+        sonucListesi.replaceChildren();
+
+        if (aranan.length === 0) return;
+
+        const eslesenler = [];
+
+        for (let i = 0; i < tumVeriler.length; i++) {
+
+            const kelimeler = tumVeriler[i].kelimeler;
+
+            if (kelimeler.some(kelime =>
+                kelime.includes(aranan)
+            )) {
+                eslesenler.push(tumVeriler[i].orjinal);
+
+                if (eslesenler.length >= 50) break;
             }
         }
 
-        verileriYukle();
+        if (eslesenler.length === 0) {
 
-        const aramaInput = document.getElementById("aramaInput");
-        aramaInput.addEventListener("input", (e) => {
-            const aranan = e.target.value.trim().toLocaleLowerCase('tr-TR');
-            const sonucListesi = document.getElementById("sonucListesi");
-            sonucListesi.innerHTML = "";
+            const mesaj = document.createElement("div");
 
-            if (aranan.length === 0) return;
+            mesaj.className =
+                "bg-white p-5 rounded-2xl shadow-sm text-center text-slate-500 border border-slate-100";
 
-            const eslesenler = [];
-            for (let i = 0; i < tumVeriler.length; i++) {
-                if (tumVeriler[i].kelimeler.includes(aranan)) {
-                    eslesenler.push(tumVeriler[i].orjinal);
-                    if (eslesenler.length >= 50) break;
-                }
-            }
+            mesaj.textContent =
+                "Aradığınız kriterlere uygun sonuç bulunamadı.";
 
-            if (eslesenler.length === 0) {
-                sonucListesi.innerHTML = `
-                    <div class="bg-white p-5 rounded-2xl shadow-sm text-center text-slate-500 border border-slate-100">
-                        Aradığınız kriterlere uygun sonuç bulunamadı.
-                    </div>`;
-                return;
-            }
+            sonucListesi.appendChild(mesaj);
 
-            let htmlIcerik = "";
-            eslesenler.forEach(item => {
-                htmlIcerik += `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:border-emerald-300 transition-all">
-                        <span class="font-medium text-slate-700">${item}</span>
-                        <span class="text-xs bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full font-semibold">Güvenli / Uygun</span>
-                    </div>`;
-            });
-            sonucListesi.innerHTML = htmlIcerik;
+            return;
+        }
+
+        eslesenler.forEach(item => {
+
+            const kart = document.createElement("div");
+
+            kart.className =
+                "bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between gap-3 hover:border-emerald-300 transition-all";
+
+            const urunMetni = document.createElement("span");
+
+            urunMetni.className =
+                "font-medium text-slate-700 break-words";
+
+            // CSV verisi HTML olarak çalıştırılmaz.
+            urunMetni.textContent = item;
+
+            const etiket = document.createElement("span");
+
+            etiket.className =
+                "text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-semibold shrink-0";
+
+            // Güvenli olduğu doğrulanmadığı için nötr etiket.
+            etiket.textContent = "Arama sonucu";
+
+            kart.appendChild(urunMetni);
+            kart.appendChild(etiket);
+
+            sonucListesi.appendChild(kart);
         });
-    </script>
+
+    });
+</script>
+```
 </body>
 </html>
